@@ -1,8 +1,8 @@
-const express = require('express')
-const cors = require('cors')
-const app = express()
-const port = process.env.PORT || 5000
-const jwt = require('jsonwebtoken')
+const express = require('express');
+const cors = require('cors');
+const app = express();
+const port = process.env.PORT || 5000;
+const jwt = require('jsonwebtoken');
 
 // midddleware
 app.use(cors())
@@ -26,19 +26,19 @@ const client = new MongoClient(uri, {
 });
 
 const verifyjwt = (req, res, next) => {
-    console.log(req.headers.authorization)
     const authorization = req.headers.authorization;
+
     if (!authorization) {
-        return res.status(401).send({ error: true, message: "unauthorization access" });
+        res.status(401).send({ error: 1, message: "unauthorized access authorization absent" })
     }
-    const token = authorization.split(' ')[1];
-    console.log('token from verifyjwt is :', token)
+    const token = authorization.split(" ")[1]
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
         if (error) {
-            return res.status(403).send({ error: true, message: "unauthorized access" })
+            res.status(401).send({ error: 1, message: "unauthorized access token absent" })
+        } else {
+            req.decoded = decoded
         }
-        req.decoded = decoded;
-        next()
+        next();
     })
 }
 
@@ -56,12 +56,10 @@ async function run() {
         // jwt api
         app.post("/jwt", (req, res) => {
             const user = req.body;
-            console.log(user);
-            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
+            console.log(user)
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' })
             res.send({ token })
-
         })
-
 
 
         // service api
@@ -86,7 +84,8 @@ async function run() {
         app.get("/bookings", verifyjwt, async (req, res) => {
             // console.log(req.headers.authorization)
             const decoded = req.decoded;
-            if (decoded.email !== req.query.email) {
+            console.log("come back after verify", decoded)
+            if (decoded.email !== req.query?.email) {
                 return res.status(403).send({ error: 1, message: "forbidden access" })
             }
             let query = {}
@@ -114,7 +113,7 @@ async function run() {
                 }
             }
             const result = await bookingCollection.updateOne(filter, updatedDoc)
-            console.log(result)
+            // console.log(result)
             res.send(result)
         })
 
@@ -129,7 +128,7 @@ async function run() {
 
 
         // await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
